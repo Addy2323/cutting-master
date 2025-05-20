@@ -1052,8 +1052,10 @@
                         const successModal = new bootstrap.Modal('#bookingSuccessModal');
                         successModal.show();
 
-                        // Reset form after delay
-                        setTimeout(resetBooking, 1000);
+                        // Redirect to payment form after a short delay
+                        setTimeout(() => {
+                            window.location.href = `/payment/${response.appointment.id}`;
+                        }, 2000);
                     },
                     error: function(xhr) {
                         let errorMessage = 'Booking failed. Please try again.';

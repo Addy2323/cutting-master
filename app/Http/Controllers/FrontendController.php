@@ -36,6 +36,16 @@ class FrontendController extends Controller
         return view('frontend.index', compact('categories','employees'));
     }
 
+    public function categories()
+    {
+        $categories = Category::where('status', 1)
+            ->with(['services' => function($query) {
+                $query->where('status', 1);
+            }])
+            ->paginate(12);
+
+        return view('frontend.categories.index', compact('categories'));
+    }
 
     public function getServices(Request $request, Category $category)
     {

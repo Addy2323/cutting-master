@@ -67,6 +67,10 @@
                                 @enderror
                             </div>
                             <div class="form-group">
+                                <label for="duration">Duration (in minutes)</label>
+                                <input type="number" name="duration" class="form-control" id="duration" placeholder="Enter duration in minutes" value="{{ old('duration') }}" required>
+                            </div>
+                            <div class="form-group">
                                 <label for="inputStatus">Slug
                                 </label>
                                 <small>&nbsp;&nbsp;Unique url of the Service

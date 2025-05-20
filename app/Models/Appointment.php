@@ -9,7 +9,25 @@ class Appointment extends Model
 {
     use SoftDeletes;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'employee_id',
+        'service_id',
+        'booking_id',
+        'name',
+        'email',
+        'phone',
+        'notes',
+        'amount',
+        'booking_date',
+        'booking_time',
+        'status',
+    ];
+
+    protected $casts = [
+        'booking_date' => 'date',
+        'amount' => 'decimal:2',
+    ];
 
     public function service()
     {

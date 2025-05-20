@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - laravel
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: booking
+      DB_USERNAME: booking_user
+      DB_PASSWORD: booking_password
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: booking
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: booking_user
+      MYSQL_PASSWORD: booking_password
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  dbdata:
+
+networks:
+  laravel:
+    driver: bridge
+ 

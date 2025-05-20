@@ -43,6 +43,7 @@ class ServiceController extends Controller
             'category_id'       => 'required',
             'title'             => 'required|string|max:200',
             'slug'              => 'required|unique:services,slug',
+            'duration'          => 'required|integer|min:1',
             'image'             => 'nullable|image|mimes:jpg,png,jpeg,gif,svg,webp|max:2048',
             'excerpt'           => 'nullable',
             'body'              => 'nullable',

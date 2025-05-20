@@ -75,6 +75,10 @@
         <main class="py-4">
             @yield('content')
         </main>
+
+        <footer class="bg-gray-800 text-white p-4 text-center">
+            &copy; {{ date('Y') }} ADDO.NET. All rights reserved.
+        </footer>
     </div>
 </body>
 </html>

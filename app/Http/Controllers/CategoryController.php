@@ -46,6 +46,7 @@ class CategoryController extends Controller
         $data['featured'] = $request->featured ?? 0;
         $data['status'] = $request->status ?? 0;
         $data['body'] = $request->body ?? '';
+        $data['name'] = $request->title;
 
         if($request->hasFile('image'))
         {

@@ -12,13 +12,14 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PaymentController;
 
 use Illuminate\Http\Request;
 
 
 Auth::routes();
 
-Route::get('/',[FrontendController::class,'index'])->name('home');
+Route::get('/', [FrontendController::class, 'index'])->name('home');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -57,6 +58,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     //deleted permanently
     Route::delete('service-delete/{id}', [ServiceController::class, 'force_delete'])->name('service.force.delete');
 
+    // Add this line for the services index route
+    Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 
     //summernote image
     Route::post('summernote',[SummerNoteController::class,'summerUpload'])->name('summer.upload.image');
@@ -90,28 +93,39 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
         dd($request->all())->toArray();
     })->name('test');
 
+    // Payment Routes
+    Route::post('/payment/process', [PaymentController::class, 'processPayment'])->name('payment.process');
+    Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment'])->name('payment.confirm');
+    Route::post('/payment/create-intent', [PaymentController::class, 'createPaymentIntent'])->name('payment.create-intent');
+    Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/appointment/success', [AppointmentController::class, 'success'])->name('appointment.success');
+
 });
 
 
 
 //frontend routes
 //fetch services from categories
+Route::get('/categories', [FrontendController::class, 'categories'])->name('categories.index');
+Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/categories/{category}/services', [FrontendController::class, 'getServices'])->name('get.services');
-
-//fetch employee from category
 Route::get('/services/{service}/employees', [FrontendController::class, 'getEmployees'])->name('get.employees');
+Route::get('/employees/{employee}/availability/{date?}', [FrontendController::class, 'getEmployeeAvailability'])->name('employee.availability');
 
-//get availibility
-Route::get('/employees/{employee}/availability/{date?}', [FrontendController::class, 'getEmployeeAvailability'])
-    ->name('employee.availability');
-
-//create appointment
+// Booking routes
 Route::post('/bookings', [AppointmentController::class, 'store'])->name('bookings.store');
-Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments')->middleware('permission:appointments.view| appointments.create | services.appointments | appointments.delete');
+Route::get('/appointment/success', [AppointmentController::class, 'success'])->name('appointment.success');
 
-Route::post('/appointments/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update.status');
+// Admin routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments')->middleware('permission:appointments.view| appointments.create | services.appointments | appointments.delete');
+    Route::post('/appointments/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update.status');
+    Route::post('/update-status', [DashboardController::class, 'updateStatus'])->name('dashboard.update.status');
+    
+    // Other admin routes...
+});
 
-//update status from dashbaord
-Route::post('/update-status', [DashboardController::class, 'updateStatus'])->name('dashboard.update.status');
+Route::view('/about', 'frontend.about')->name('about');
+Route::view('/contact', 'frontend.contact')->name('contact');
 
 

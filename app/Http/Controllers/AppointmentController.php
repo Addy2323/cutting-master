@@ -7,6 +7,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use App\Events\BookingCreated;
 use App\Events\StatusUpdated;
+use App\Models\Service;
 
 
 class AppointmentController extends Controller
@@ -33,54 +34,46 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'user_id' => 'nullable|exists:users,id',
-            'employee_id' => 'required|exists:employees,id',
-            'service_id' => 'required|exists:services,id',
+        $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
-            'notes' => 'nullable|string',
-            'amount' => 'required|numeric',
-            'booking_date' => 'required|date',
+            'service_id' => 'required|exists:services,id',
+            'employee_id' => 'required|exists:employees,id',
+            'booking_date' => 'required|date|after_or_equal:today',
             'booking_time' => 'required',
-            'status' => 'required|string',
+            'notes' => 'nullable|string',
         ]);
-
-            // Set user_id if not provided but user is authenticated
-        // if (auth()->check() && !$request->has('user_id')) {
-        //     $validated['user_id'] = auth()->id();
-        // }
-
-        $isPrivilegedRole = auth()->check() && (
-            auth()->user()->hasRole('admin') ||
-            auth()->user()->hasRole('moderator') ||
-            auth()->user()->hasRole('employee')
-        );
-
-            // If admin/moderator/employee is booking, user_id should be null
-        if ($isPrivilegedRole) {
-            $validated['user_id'] = null;
-        } elseif (auth()->check() && !$request->has('user_id')) {
-            // Otherwise, assign user_id to the authenticated user
-            $validated['user_id'] = auth()->id();
-        }
-
 
         // Generate unique booking ID
-        $validated['booking_id'] = 'BK-' . strtoupper(uniqid());
+        $bookingId = 'BK-' . strtoupper(uniqid());
 
+        // Get service price
+        $service = Service::findOrFail($request->service_id);
+        $amount = $service->sale_price ?? $service->price;
 
-        $appointment = Appointment::create($validated);
+        // Extract start time from the time range
+        $timeRange = explode(' - ', $request->booking_time);
+        $startTime = \Carbon\Carbon::createFromFormat('g:i A', trim($timeRange[0]))->format('H:i:s');
 
-        event(new BookingCreated($appointment));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Appointment booked successfully!',
-            'booking_id' => $appointment->booking_id,
-            'appointment' => $appointment
+        // Create appointment
+        $appointment = Appointment::create([
+            'user_id' => auth()->id() ?? null,
+            'employee_id' => $request->employee_id,
+            'service_id' => $request->service_id,
+            'booking_id' => $bookingId,
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'notes' => $request->notes,
+            'amount' => $amount,
+            'booking_date' => $request->booking_date,
+            'booking_time' => $startTime,
+            'status' => 'Pending payment',
         ]);
+
+        return redirect()->route('appointment.success', ['booking_id' => $bookingId])
+            ->with('success', 'Appointment booked successfully!');
     }
 
     /**
@@ -119,7 +112,7 @@ class AppointmentController extends Controller
     {
         $request->validate([
             'appointment_id' => 'required|exists:appointments,id',
-            'status' => 'required|string',
+            'status' => 'required|string|in:Pending payment,Processing,Confirmed,Cancelled,Completed,On Hold,Rescheduled,No Show',
         ]);
 
         $appointment = Appointment::findOrFail($request->appointment_id);
@@ -129,6 +122,14 @@ class AppointmentController extends Controller
         event(new StatusUpdated($appointment));
 
         return redirect()->back()->with('success', 'Appointment status updated successfully.');
+    }
+
+    public function success(Request $request)
+    {
+        $bookingId = $request->booking_id;
+        $appointment = Appointment::where('booking_id', $bookingId)->firstOrFail();
+        
+        return view('frontend.appointment.success', compact('appointment'));
     }
 
 }
