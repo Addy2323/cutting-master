@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Appointment Booking System on Laravel made by Vfix Technology
 
 A versatile and customizable appointment booking system designed for astrologers, doctors, consultants, Salons, Spas, Lawyers, Tutors, Career Coaches, Personal Trainers, Nutritionists, Home services, Plumbers, Electricians, Automotive and other professionals. Features include automated email notifications, multi-user roles, calendar-based scheduling, availability management, and holiday settings.
@@ -138,3 +139,27 @@ If you find this package useful, please consider showing your support by:
 Your support helps maintain and improve this project for everyone.
 
 #### For any help or customization, visit https://www.vfixtechnology.com or email us info@vfixtechnology.com
+=======
+# cutting-master
+
+
+A comprehensive toolkit and resource hub for managing and optimizing barber shop operations.
+
+## Features
+
+- Appointment scheduling
+- Customer management
+- Inventory tracking
+- Staff management
+- And more!
+
+## Getting Started
+
+Describe how to install and use your barber shop management tools here.
+##credentials
+email:admin@example.com
+password:admin@123
+## License
+
+Specify your license here.
+>>>>>>> 567a305405d60af33104c4c031bdb09f2ee13b67
