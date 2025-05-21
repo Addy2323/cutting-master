@@ -1,165 +1,128 @@
-<<<<<<< HEAD
-# Appointment Booking System on Laravel made by Vfix Technology
 
-A versatile and customizable appointment booking system designed for astrologers, doctors, consultants, Salons, Spas, Lawyers, Tutors, Career Coaches, Personal Trainers, Nutritionists, Home services, Plumbers, Electricians, Automotive and other professionals. Features include automated email notifications, multi-user roles, calendar-based scheduling, availability management, and holiday settings.
+# ✂️ Cutting Master – Appointment Booking System
 
-#### Features:
+A powerful **Laravel-based** appointment booking and management system tailored for **barber shops** and similar service businesses. Built with flexibility, automation, and ease of use in mind.
 
-✅ Multi-role support (Admin,  Employee/Professional , Moderator, Subscriber)
+---
 
-✅ Automated Email Notifications for bookings & reminders
+## ✅ Key Features
 
-✅ Interactive Calendar View for easy scheduling
+* 🔐 **Multi-role Support** (Admin, Professional/Employee, Moderator, Subscriber)
+* 📅 **Interactive Calendar View** with multiple time slots per day
+* 📧 **Automated Email Notifications** (Bookings, Reminders, Cancellations)
+* ❌ **Block Holidays** and Unavailable Dates
+* 🔄 **Rescheduling and Cancellations**
+* 📱 **Responsive Design** (Mobile-friendly)
+* 🚀 **Easy Setup and Customization**
 
-✅ Multi-Slot Availability (Multiple time slots per day e.g., 9 AM–12 PM + 3 PM–6 PM).
+---
 
-✅ Mark Holidays & Unavailable Dates
+## 📦 Installation Guide
 
-✅ Easy Rescheduling & Cancellation for professionals & clients
+### 1. Clone the Repository
 
-✅ Responsive Design (Works on desktop & mobile)
-
-## Installation
-
-1. Clone the repository:
-
-```php
-git clone https://github.com/vfixtechnology/appointment-booking-system.git
+```bash
+git clone https://github.com/Addy2323/cutting-master.git
+cd cutting-master
 ```
-```php
-cd appointment-booking-system
-```
-Install Dependencies:
-```php
+
+### 2. Install Dependencies
+
+```bash
 composer install
 ```
-Setting Up Environment File
-##### Rename .env.example to .env in the main directory. This file holds your app’s environment settings like database and API keys.
 
-Generate Key for project
-```php
+### 3. Set Up Environment
+
+* Rename `.env.example` to `.env`
+* Generate app key:
+
+```bash
 php artisan key:generate
 ```
 
-2. Set up the database:
- - Create a MySQL database.
- - Update .env file with your database credentials:
- ```php
-DB_DATABASE=your_database_name
-DB_USERNAME=your_db_username
-DB_PASSWORD=your_db_password
- ```
+### 4. Configure Database
 
-3. Configure SMTP for email notifications:
-Add your email service (e.g., Mailtrap, Gmail) details in .env:
- ```php
-MAIL_MAILER=smtp
-MAIL_HOST=your_smtp_host
-MAIL_PORT=your_smtp_port
-MAIL_USERNAME=your_email_username
-MAIL_PASSWORD=your_email_password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=your@email.com
- ```
+Edit your `.env` file with correct DB credentials:
 
-4. Run migrations & seed dummy data:
- ```php
+```env
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+Then run:
+
+```bash
 php artisan migrate
 php artisan db:seed
- ```
+```
 
-5. Start the queue for email processing:
-```php
+### 5. Configure Email (SMTP)
+
+In your `.env` file:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.yourmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@example.com
+MAIL_PASSWORD=your_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your_email@example.com
+```
+
+### 6. Start the Server & Queue Worker
+
+```bash
+php artisan serve
 php artisan queue:listen
 ```
 
-5. Start the development server:
-```php
-php artisan serve
+Now visit: [http://localhost:8000](http://localhost:8000)
+
+---
+
+## 🔐 Admin Credentials
+
+```
+Login URL: http://localhost:8000/login
+Email: admin@example.com
+Password: admin123
 ```
 
-Now, open http://localhost:8000 in your browser to access the system.
+---
 
-## Admin login credentials:
-link: http://localhost:8000/login
+## 🛠️ Usage Instructions
 
-user: admin@example.com
+* **Admin**: Manage users, appointments, system settings.
+* **Professional**: Set availability, manage personal bookings, mark holidays.
+* **Moderator**: Manage all appointments and act with professional-level access.
+* **Subscriber (Client)**: Book appointments and view bookings after login.
 
-pass: admin123
+---
 
+## 💬 Support & Customization
 
-## 📅 How to Use?
-Create Account For Professionals (Doctors, Astrologers, or etc.)
+Need help with installation or want to customize features?
 
-✅ Set Availability: Define working hours & multiple slots per day.
+📱 **WhatsApp**: [Chat on WhatsApp](https://wa.me/+255768828247)
+📧 **Email**: [mymambaado@gmail.com](mailto:myambaado@gmail.com)
 
-✅ Block Holidays: Mark days as unavailable - only available while editing profile of professional.
+> 💼 Paid support available for enterprise setups and integrations.
 
-✅ Manage Appointments: Approve, Confirmed, or cancel bookings.
+---
 
+## 🙌 Support This Project
 
+If this system helped you:
 
-## ✨ Key Features
-### 🔐 Role-Based Access
-##### Admin: Full system control (users, appointments, settings).
+* ⭐ Star the repo on GitHub
+* 🗣️ Share with your developer friends
+* 🐞 Report bugs or suggest features via Issues
 
-##### Moderator: Manage all appointments + employee-level access.
+---
 
-##### Employee/Professional:
-✅ Set availability (multiple slots/day).
+## 📄 License
 
-✅ Mark holidays/unavailable dates.
-
-✅ View/manage their own appointments.
-
-
-##### Subscriber (Client):
-✅ Guest checkout is available. However, bookings can only be viewed after logging in with an account created at the time of booking.
-
-## Support & Customization Services
-For installation assistance, premium support, or custom feature development:
-
-#### Contact Our Team:
-📱 WhatsApp: https://wa.me/918447525204
-
-✉ Email: info@vfixtechnology.com
-
-🌐 Website: https://www.vfixtechnology.com
-
-Paid support packages available for enterprise implementations and custom integrations.
-
-## Support This Project
-
-If you find this package useful, please consider showing your support by:
-
-⭐ Giving the repository a star on GitHub  
-📣 Sharing it with your developer community  
-🐛 Reporting any issues you encounter  
-
-Your support helps maintain and improve this project for everyone.
-
-#### For any help or customization, visit https://www.vfixtechnology.com or email us info@vfixtechnology.com
-=======
-# cutting-master
-
-
-A comprehensive toolkit and resource hub for managing and optimizing barber shop operations.
-
-## Features
-
-- Appointment scheduling
-- Customer management
-- Inventory tracking
-- Staff management
-- And more!
-
-## Getting Started
-
-Describe how to install and use your barber shop management tools here.
-##credentials
-email:admin@example.com
-password:admin@123
-## License
-
-Specify your license here.
->>>>>>> 567a305405d60af33104c4c031bdb09f2ee13b67
+MIT – feel free to use, modify, and distribute!
