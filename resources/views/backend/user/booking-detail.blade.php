@@ -101,8 +101,7 @@
                                         <td>{{ $booking->gender }}</td>
                                         <td>{{ $booking->service_name }}</td>
                                         <td>{{ $booking->booking_time }}</td>
-                                        <td>{{ $booking->booking_date ? date('d M Y', strtotime($booking->booking_date)) : 'N/A' }}
-                                        </td>
+                                        <td>{{ $booking->booking_date }}</td>
                                         <td>{{ $booking->birth_place }}</td>
                                         <td>{{ $booking->birth_time }}</td>
 

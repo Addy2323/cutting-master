@@ -13,6 +13,8 @@ use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\TestController;
 
 use Illuminate\Http\Request;
 
@@ -30,8 +32,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     //update user password
 
     //profile page
-    Route::get('profile',[ProfileController::class,'index'])->name('profile');
-    //user profile update
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::patch('profile-update/{user}',[ProfileController::class,'profileUpdate'])->name('user.profile.update');
     Route::patch('user/pasword-update/{user}',[UserController::class,'password_update'])->name('user.password.update');
     Route::put('user/profile-pic/{user}',[UserController::class,'updateProfileImage'])->name('user.profile.image.update');
@@ -100,6 +104,13 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
     Route::get('/appointment/success', [AppointmentController::class, 'success'])->name('appointment.success');
 
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index')->middleware('permission:appointments.view| appointments.create | services.appointments | appointments.delete');
+
 });
 
 
@@ -119,6 +130,7 @@ Route::get('/appointment/success', [AppointmentController::class, 'success'])->n
 // Admin routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments')->middleware('permission:appointments.view| appointments.create | services.appointments | appointments.delete');
+    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show')->middleware('permission:appointments.view| appointments.create | services.appointments | appointments.delete');
     Route::post('/appointments/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update.status');
     Route::post('/update-status', [DashboardController::class, 'updateStatus'])->name('dashboard.update.status');
     
@@ -127,5 +139,15 @@ Route::middleware(['auth'])->group(function () {
 
 Route::view('/about', 'frontend.about')->name('about');
 Route::view('/contact', 'frontend.contact')->name('contact');
+
+Route::get('/test/geocoding', [TestController::class, 'testGeocoding']);
+
+Route::get('/test/config', function() {
+    return response()->json([
+        'google_maps_api_key' => config('services.google.maps_api_key'),
+        'env_value' => env('GOOGLE_MAPS_API_KEY'),
+        'config_path' => config_path('services.php')
+    ]);
+});
 
 

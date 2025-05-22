@@ -245,7 +245,8 @@
             $('#modalPhone').text($(this).data('phone'));
             $('#modalStaff').text($(this).data('employee'));
             $('#modalStartTime').text($(this).data('start'));
-            $('#modalAmount').text($(this).data('amount'));
+            const amount = $(this).data('amount');
+            $('#modalAmount').text(amount ? 'TZS ' + new Intl.NumberFormat().format(amount) : 'N/A');
             $('#modalNotes').text($(this).data('notes'));
 
             // Set status select dropdown

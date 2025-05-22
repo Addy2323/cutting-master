@@ -15,7 +15,8 @@
                         <p><strong>Booking ID:</strong> {{ $appointment->booking_id }}</p>
                         <p><strong>Service:</strong> {{ $appointment->service->title }}</p>
                         <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($appointment->booking_date)->format('F d, Y') }}</p>
-                        <p><strong>Time:</strong> {{ \Carbon\Carbon::parse($appointment->booking_time)->format('h:i A') }}</p>
+                        <p><strong>Time:</strong> {{ $appointment->booking_time }}</p>
+                        <p><strong>Amount:</strong> TZS {{ number_format($appointment->amount) }}</p>
                         <p><strong>Status:</strong> 
                             <span class="badge {{ $appointment->status === 'Pending payment' ? 'bg-warning' : 
                                                 ($appointment->status === 'Confirmed' ? 'bg-success' : 
@@ -38,3 +39,4 @@
     </div>
 </div>
 @endsection 
+ 

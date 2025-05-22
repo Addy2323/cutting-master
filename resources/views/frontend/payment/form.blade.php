@@ -16,7 +16,7 @@
                             <div class="col-md-6">
                                 <p><strong>Service:</strong> {{ $appointment->service->title }}</p>
                                 <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($appointment->booking_date)->format('F d, Y') }}</p>
-                                <p><strong>Time:</strong> {{ \Carbon\Carbon::parse($appointment->booking_time)->format('h:i A') }}</p>
+                                <p><strong>Time:</strong> {{ $appointment->booking_time }}</p>
                             </div>
                             <div class="col-md-6">
                                 <p><strong>Staff:</strong> {{ $appointment->employee->user->name }}</p>
@@ -218,3 +218,4 @@
 </script>
 @endpush
 @endsection 
+ 

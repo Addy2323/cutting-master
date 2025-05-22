@@ -23,8 +23,8 @@
                 @foreach($appointments as $appointment)
                     {
                         title: '{{ $appointment->name }} - {{ $appointment->service->name }}',  // Appointment Name and Service
-                        start: '{{ $appointment->booking_date }}T{{ $appointment->booking_time }}', // Date + Time
-                        end: '{{ $appointment->booking_date }}T{{ \Carbon\Carbon::parse($appointment->booking_time)->addHours(1)->format('H:i') }}', // Add one hour to the appointment time for end time
+                        start: '{{ $appointment->booking_date }}T{{ \Carbon\Carbon::createFromFormat('g:i A', trim(explode(' - ', $appointment->booking_time)[0]))->format('H:i') }}',
+                        end: '{{ $appointment->booking_date }}T{{ \Carbon\Carbon::createFromFormat('g:i A', trim(explode(' - ', $appointment->booking_time)[1]))->format('H:i') }}',
                         description: '{{ $appointment->notes }}', // Description (Optional)
                         color: 'green', // Color for confirmed appointments
                     },

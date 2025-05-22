@@ -497,4 +497,20 @@
         });
     </script>
 
+    <script>
+        $(document).ready(function() {
+            // Show/hide travel-related fields based on service type
+            $('#service_type').change(function() {
+                var serviceType = $(this).val();
+                var travelFields = $('#travel_fee, #service_radius, #travel_buffer_minutes').closest('.form-group');
+                
+                if (serviceType === 'at_home' || serviceType === 'both') {
+                    travelFields.show();
+                } else {
+                    travelFields.hide();
+                }
+            }).trigger('change');
+        });
+    </script>
+
 @stop

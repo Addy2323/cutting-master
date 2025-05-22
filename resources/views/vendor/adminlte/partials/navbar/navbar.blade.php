@@ -18,6 +18,39 @@
 
     {{-- Navbar right links --}}
     <ul class="navbar-nav ml-auto">
+        {{-- Notifications --}}
+        @auth
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-bell"></i>
+                    @php
+                        $unreadCount = \App\Models\Notification::where('user_id', auth()->id())
+                            ->where('is_read', false)
+                            ->count();
+                    @endphp
+                    @if($unreadCount > 0)
+                        <span class="badge badge-warning navbar-badge">{{ $unreadCount }}</span>
+                    @endif
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <span class="dropdown-item dropdown-header">{{ $unreadCount }} New Notifications</span>
+                    <div class="dropdown-divider"></div>
+                    @foreach(\App\Models\Notification::where('user_id', auth()->id())
+                        ->where('is_read', false)
+                        ->latest()
+                        ->take(5)
+                        ->get() as $notification)
+                        <a href="{{ $notification->link }}" class="dropdown-item">
+                            <i class="fas fa-calendar mr-2"></i> {{ $notification->message }}
+                            <span class="float-right text-muted text-sm">{{ $notification->created_at->diffForHumans() }}</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                    @endforeach
+                    <a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer">See All Notifications</a>
+                </div>
+            </li>
+        @endauth
+
         {{-- Custom right links --}}
         @yield('content_top_nav_right')
 

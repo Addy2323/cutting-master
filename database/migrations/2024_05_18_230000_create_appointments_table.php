@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->decimal('amount', 10, 2);
             $table->date('booking_date');
-            $table->time('booking_time');
+            $table->string('booking_time');
             $table->enum('status', [
                 'Pending payment',
                 'Processing',

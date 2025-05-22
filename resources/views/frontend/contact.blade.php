@@ -6,3 +6,4 @@
     <p>This is the contact page.</p>
 </div>
 @endsection 
+ 

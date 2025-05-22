@@ -116,4 +116,55 @@ class User extends Authenticatable
         return $this->hasMany(Appointment::class);
     }
 
+    /**
+     * Get the user's primary role
+     */
+    public function getPrimaryRole()
+    {
+        return $this->roles->first();
+    }
+
+    /**
+     * Check if user is a professional (employee)
+     */
+    public function isProfessional()
+    {
+        return $this->hasRole('employee');
+    }
+
+    /**
+     * Check if user is an admin
+     */
+    public function isAdmin()
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Check if user is a moderator
+     */
+    public function isModerator()
+    {
+        return $this->hasRole('moderator');
+    }
+
+    /**
+     * Check if user is a subscriber (client)
+     */
+    public function isSubscriber()
+    {
+        return $this->hasRole('subscriber');
+    }
+
+    /**
+     * Check if user has required specializations
+     */
+    public function hasRequiredSpecializations()
+    {
+        if (!$this->isProfessional()) {
+            return false;
+        }
+        return $this->employee && $this->employee->services()->count() > 0;
+    }
+
 }

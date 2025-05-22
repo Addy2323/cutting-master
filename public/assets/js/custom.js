@@ -1,4 +1,3 @@
-
         $(document).ready(function() {
 
             const categories = @json($categories);
@@ -93,10 +92,8 @@
 
                 const serviceId = $(this).data("service");
                 const serviceTitle = $(this).find('.card-title').text();
-                // const servicePrice = $(this).find('.fw-bold').text().replace('$', '');
-                const servicePrice = $(this).find('.fw-bold').text();
-                const serviceDuration = $(this).find('.card-text:contains("Duration:")').text().replace(
-                    'Duration: ', '');
+                const servicePrice = $(this).find('.fw-bold').text().replace('TZS ', '').replace(/,/g, '');
+                const serviceDuration = $(this).find('.card-text:contains("Duration:")').text().replace('Duration: ', '');
 
                 // Store the selected service in booking state
                 bookingState.selectedService = {
@@ -168,13 +165,21 @@
                 updateTimeSlots(date);
             });
 
-            // Time slot selection
+            // Time slot selection (remove all other handlers for this)
+            $(document).off("click", ".time-slot:not(.disabled)");
             $(document).on("click", ".time-slot:not(.disabled)", function() {
-                $(".time-slot").removeClass("selected");
-                $(this).addClass("selected");
+                $(".time-slot").removeClass("selected active");
+                $(this).addClass("selected active");
 
-                const time = $(this).data("time");
-                bookingState.selectedTime = time;
+                const display = $(this).data("time");
+                const start = $(this).data("start");
+                const end = $(this).data("end");
+                bookingState.selectedTime = {
+                    display: display,
+                    start: start,
+                    end: end
+                };
+                updateSummary();
             });
 
             // Calendar navigation
@@ -636,7 +641,7 @@
                                     end: $(this).data('end'),
                                     display: $(this).text()
                                 };
-                                updateBookingSummary();
+                                updateSummary();
                             });
 
                             $slotsContainer.append(slotElement);
@@ -662,47 +667,32 @@
 
 
             function updateSummary() {
-                // Find the selected category
-                const selectedCategory = categories.find(cat => cat.id == bookingState.selectedCategory);
+                const service = bookingState.selectedService;
+                const employee = bookingState.selectedEmployee;
+                const date = bookingState.selectedDate;
+                const time = bookingState.selectedTime;
 
-                // Update summary with booking details
-                $("#summary-category").text(selectedCategory ? selectedCategory.title : 'Not selected');
-
-                // Update service info - using the stored service object
-                if (bookingState.selectedService) {
-                    $("#summary-service").text(
-                        `${bookingState.selectedService.title} (${bookingState.selectedService.price})`);
-                    $("#summary-duration").text(`${bookingState.selectedEmployee.slot_duration} minutes`);
-                    $("#summary-price").text(bookingState.selectedService.price);
-                }
-
-                // Update employee info
-                if (bookingState.selectedEmployee) {
-                    $("#summary-employee").text(bookingState.selectedEmployee.user.name);
-                }
-
-                // Update date/time info
-                if (bookingState.selectedDate && bookingState.selectedTime) {
-                    const formattedDate = new Date(bookingState.selectedDate).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-
-                    $("#summary-datetime").text(
-                        `${formattedDate} at ${bookingState.selectedTime.display || bookingState.selectedTime}`);
-                }
+                $("#summary-service").text(service.title);
+                $("#summary-employee").text(employee.user.name);
+                $("#summary-date").text(new Date(date).toLocaleDateString());
+                $("#summary-time").text(time);
+                $("#summary-amount").text('TZS ' + new Intl.NumberFormat().format(service.price));
             }
 
 
 
-            // function submitBooking() {
-
             function submitBooking() {
+                // Debug: show what is being sent
+                alert('DEBUG: bookingState.selectedTime = ' + JSON.stringify(bookingState.selectedTime));
                 // Get form data
                 const form = $('#customer-info-form');
                 const csrfToken = form.find('input[name="_token"]').val(); // Get CSRF token from form
+
+                // Validate time selection
+                if (!bookingState.selectedTime || !bookingState.selectedTime.display) {
+                    alert('Please select a valid time slot before confirming your booking.');
+                    return;
+                }
 
                 // Prepare booking data
                 const bookingData = {
@@ -714,7 +704,7 @@
                     notes: $('#customer-notes').val(),
                     amount: parseFloat(bookingState.selectedService.price.replace(/[^0-9.]/g, '')),
                     booking_date: bookingState.selectedDate,
-                    booking_time: bookingState.selectedTime.start || bookingState.selectedTime,
+                    booking_time: bookingState.selectedTime.display,
                     status: 'Pending payment',
                     _token: csrfToken // Include CSRF token in payload
                 };

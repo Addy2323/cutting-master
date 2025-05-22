@@ -928,7 +928,7 @@
                                     end: $(this).data('end'),
                                     display: $(this).text()
                                 };
-                                updateBookingSummary();
+                                updateSummary();
                             });
 
                             $slotsContainer.append(slotElement);
@@ -1006,7 +1006,7 @@
                     notes: $('#customer-notes').val(),
                     amount: parseFloat(bookingState.selectedService.price.replace(/[^0-9.]/g, '')),
                     booking_date: bookingState.selectedDate,
-                    booking_time: bookingState.selectedTime.start || bookingState.selectedTime,
+                    booking_time: bookingState.selectedTime.display || `${bookingState.selectedTime.start} - ${bookingState.selectedTime.end}`,
                     status: 'Pending payment',
                     _token: csrfToken // Include CSRF token in payload
                 };

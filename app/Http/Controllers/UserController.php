@@ -49,38 +49,39 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-
-        //dd($request->all());
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'phone' => 'required|string|unique:users,phone',
             'password' => 'required|string|min:8|confirmed',
-            'roles' => 'required|exists:roles,name', // Validate role
-            'service' => 'nullable',
-            'slot_duration' => 'nullable',
-            'break_duration' => 'nullable',
-            'break' => 'nullable',
-            'days' => 'nullable',
-            'is_employee' => 'nullable',
+            'roles' => 'required|array|size:1|exists:roles,name', // Enforce single role
+            'service' => 'nullable|array',
+            'slot_duration' => 'nullable|integer|min:1',
+            'break_duration' => 'nullable|integer|min:0',
+            'days' => 'nullable|array',
+            'is_employee' => 'nullable|boolean',
         ]);
+
+        // Only admins can create users with admin role
+        if (in_array('admin', $data['roles']) && !auth()->user()->isAdmin()) {
+            return redirect()->back()->withErrors(['roles' => 'Only administrators can create admin users.']);
+        }
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'phone' => $data['phone'] ?? "", // Optional field
+            'phone' => $data['phone'] ?? "",
             'email_verified_at' => now(),
             'password' => \Hash::make($data['password']),
         ]);
 
         // Assign the role to the user
-        $user->assignRole($data['roles']);
+        $user->assignRole($data['roles'][0]); // Assign only the first role
 
-
-        // transform time slots into from and to combination
+        // If user is an employee, create employee record and attach services
         if($request->is_employee)
         {
-            $transformedData = $this->transformOpeningHours($data['days']); // Use $this->transformOpeningHours
+            $transformedData = $this->transformOpeningHours($data['days']);
             $data['days'] = $transformedData;
 
             $employee = Employee::create([
@@ -90,7 +91,9 @@ class UserController extends Controller
                 'break_duration'    => $data['break_duration'],
             ]);
 
-            $employee->services()->attach($data['service']);
+            if (isset($data['service']) && is_array($data['service'])) {
+                $employee->services()->attach($data['service']);
+            }
         }
 
         return redirect()->back()->withSuccess('User has been created successfully!');
@@ -147,67 +150,44 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-
-        //dd($user);
-        // Validate request data
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id ,
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'social.*' => 'sometimes',
             'password' => 'nullable|string|min:8|confirmed',
-            'roles' => 'nullable|array|exists:roles,name', // Validate roles array
-            'service' => 'nullable',
+            'roles' => 'nullable|array|size:1|exists:roles,name', // Enforce single role
+            'service' => 'nullable|array',
             'slot_duration' => function ($attribute, $value, $fail) use ($request) {
-                // Check if 'is_employee' is true and 'slot_duration' is missing
                 if ($request->is_employee && !$value) {
                     $fail('The ' . $attribute . ' field is required when the employee is true.');
                 }
-                // If it's present, it should be numeric
                 if ($value && !is_numeric($value)) {
                     $fail('The ' . $attribute . ' field must be numeric.');
                 }
             },
-            'break_duration' => 'nullable',
-            'days' => 'nullable',
+            'break_duration' => 'nullable|integer|min:0',
+            'days' => 'nullable|array',
             'status' => 'nullable|numeric',
-            'is_employee' => 'nullable',
+            'is_employee' => 'nullable|boolean',
             'holidays.date.*' => 'sometimes|required',
             'holidays.from_time' => 'nullable',
             'holidays.to_time' => 'nullable',
             'holidays.recurring' => 'nullable',
         ]);
 
-        // Block logged-in user from changing their own role or status
-        // Block logged-in user from changing their own role or status
-        if (\Auth::id() === $user->id) {
-            // Check if roles key exists AND its value is different from current roles
-            if ($request->filled('roles') && !$user->hasAnyRole($request->roles)) {
-                return redirect()->back()->withErrors(['roles' => 'You cannot change your own role.']);
-            }
-
-            if ($request->has('status') && $request->status != $user->status) {
-                return redirect()->back()->withErrors(['status' => 'You cannot change your own status.']);
-            }
-
+        // Only admins can change roles
+        if ($request->filled('roles') && !auth()->user()->isAdmin()) {
+            return redirect()->back()->withErrors(['roles' => 'Only administrators can change user roles.']);
         }
 
+        // Block users from changing their own role
+        if (\Auth::id() === $user->id && $request->filled('roles')) {
+            return redirect()->back()->withErrors(['roles' => 'You cannot change your own role.']);
+        }
 
         // Always keep 'admin' role for super admin (user ID 1)
         if ($user->id === 1 && (!in_array('admin', $request->roles ?? []))) {
             return redirect()->back()->withErrors(['roles' => 'The first user must always have the admin role.']);
-        }
-
-        // Ensure admin role is not removed from any user who currently has it
-        if ($user->hasRole('admin') && !in_array('admin', $request->roles ?? [])) {
-            return redirect()->back()->withErrors(['roles' => 'The admin role cannot be removed.']);
-        }
-
-
-        // Ensure that user ID 1's status always remains 1
-        if ($user->id === 1) {
-            $status = 1;
-        } else {
-            $status = $request->status ?? 0;
         }
 
         // Update user details
@@ -216,36 +196,22 @@ class UserController extends Controller
             'email' => $request->email,
             'phone' => $request->phone ?? $user->phone,
             'password' => $request->password ? \Hash::make($request->password) : $user->password,
-            'status' => $status,
+            'status' => $user->id === 1 ? 1 : ($request->status ?? 0),
         ]);
 
-        // Sync roles: Always retain admin role for the first user
-        if ($request->roles) {
-            $roles = $request->roles;
-
-            // Ensure admin role is present
-            if ($user->id === 1 || $user->hasRole('admin')) {
-                if (!in_array('admin', $roles)) {
-                    $roles[] = 'admin';
-                }
-            }
-
-            // Sync roles
-            $user->syncRoles($roles);
+        // Update role if provided
+        if ($request->filled('roles')) {
+            $user->syncRoles([$request->roles[0]]); // Sync with single role
         }
 
-
-
-        // Check if is_employee is set and true
+        // Update employee details if applicable
         if (!empty($data['is_employee'])) {
-            // Transform days data if provided
             if (!empty($data['days'])) {
                 $data['days'] = $this->transformOpeningHours($data['days']);
             }
 
-            // Update or create Employee record
             $employee = Employee::updateOrCreate(
-                ['user_id' => $user->id], // Condition to check
+                ['user_id' => $user->id],
                 [
                     'days' => $data['days'] ?? null,
                     'slot_duration' => $data['slot_duration'] ?? null,
@@ -253,66 +219,10 @@ class UserController extends Controller
                 ]
             );
 
-            // Attach services if provided
             if (!empty($data['service'])) {
-                $employee->services()->sync($data['service']); // Use sync to avoid duplicate entries
+                $employee->services()->sync($data['service']);
             }
-
-            if ($request->has('holidays.date') && is_array($request->input('holidays.date'))) {
-                // Get all existing holiday IDs for this employee
-                $existingHolidayIds = $user->employee->holidays->pluck('id')->toArray();
-                $submittedHolidayIds = [];
-
-                $dates = $request->input('holidays.date');
-                $fromTimes = $request->input('holidays.from_time');
-                $toTimes = $request->input('holidays.to_time');
-                $recurring = $request->input('holidays.recurring');
-                $holidayIds = $request->input('holidays.id', []); // Add hidden input for holiday IDs in your form
-
-                foreach ($dates as $index => $date) {
-                    $holidayData = [
-                        'employee_id' => $user->employee->id,
-                        'hours' => isset($fromTimes[$index]) && isset($toTimes[$index])
-                            ? [$fromTimes[$index] . '-' . $toTimes[$index]]
-                            : [],
-                        'recurring' => isset($recurring[$index]) && $recurring[$index] == 1,
-                    ];
-
-                    // Handle date format based on recurring
-                    if ($holidayData['recurring']) {
-                        $holidayData['date'] = \Carbon\Carbon::parse($date)->format('m-d');
-                    } else {
-                        $holidayData['date'] = $date;
-                    }
-
-                    // Check if this is an existing holiday (has an ID)
-                    if (isset($holidayIds[$index])) {
-                        $holiday = Holiday::find($holidayIds[$index]);
-                        if ($holiday) {
-                            $holiday->update($holidayData);
-                            $submittedHolidayIds[] = $holiday->id;
-                        }
-                    } else {
-                        // Create new holiday
-                        $holiday = Holiday::create($holidayData);
-                        $submittedHolidayIds[] = $holiday->id;
-                    }
-                }
-
-                // Delete any holidays that weren't submitted in the form
-                $holidaysToDelete = array_diff($existingHolidayIds, $submittedHolidayIds);
-                if (!empty($holidaysToDelete)) {
-                    Holiday::whereIn('id', $holidaysToDelete)->delete();
-                }
-            } else {
-                // If no holidays were submitted but there were existing ones, delete them all
-                if ($user->employee->holidays()->exists()) {
-                    $user->employee->holidays()->delete();
-                }
-            }
-
         }
-
 
         return redirect()->route('user.index')->with('success', 'Profile has been updated successfully!');
     }

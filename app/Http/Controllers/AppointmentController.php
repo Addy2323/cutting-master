@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Events\BookingCreated;
 use App\Events\StatusUpdated;
 use App\Models\Service;
+use App\Models\Notification;
+use App\Models\User;
 
 
 class AppointmentController extends Controller
@@ -41,9 +43,15 @@ class AppointmentController extends Controller
             'service_id' => 'required|exists:services,id',
             'employee_id' => 'required|exists:employees,id',
             'booking_date' => 'required|date|after_or_equal:today',
-            'booking_time' => 'required',
+            'booking_time' => ['required', 'string', 'not_in:undefined - undefined,undefined,'],
             'notes' => 'nullable|string',
+        ], [
+            'booking_time.not_in' => 'Please select a valid time slot.'
         ]);
+
+        if ($request->booking_time === 'undefined - undefined' || $request->booking_time === 'undefined' || empty($request->booking_time)) {
+            return response()->json(['message' => 'Please select a valid time slot.'], 422);
+        }
 
         // Generate unique booking ID
         $bookingId = 'BK-' . strtoupper(uniqid());
@@ -51,10 +59,7 @@ class AppointmentController extends Controller
         // Get service price
         $service = Service::findOrFail($request->service_id);
         $amount = $service->sale_price ?? $service->price;
-
-        // Extract start time from the time range
-        $timeRange = explode(' - ', $request->booking_time);
-        $startTime = \Carbon\Carbon::createFromFormat('g:i A', trim($timeRange[0]))->format('H:i:s');
+        $amount = str_replace(['TZS ', ','], '', $amount); // Remove currency formatting if present
 
         // Create appointment
         $appointment = Appointment::create([
@@ -68,9 +73,33 @@ class AppointmentController extends Controller
             'notes' => $request->notes,
             'amount' => $amount,
             'booking_date' => $request->booking_date,
-            'booking_time' => $startTime,
+            'booking_time' => $request->booking_time,
             'status' => 'Pending payment',
         ]);
+
+        // Create notification for admin
+        $admin = User::role('admin')->first();
+        if ($admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'appointment',
+                'title' => 'New Appointment',
+                'message' => "New appointment booked by {$request->name}",
+                'link' => route('appointments.show', $appointment->id)
+            ]);
+        }
+
+        // Create notification for staff
+        $staff = User::find($appointment->employee->user_id);
+        if ($staff) {
+            Notification::create([
+                'user_id' => $staff->id,
+                'type' => 'appointment',
+                'title' => 'New Appointment',
+                'message' => "You have a new appointment with {$request->name}",
+                'link' => route('appointments.show', $appointment->id)
+            ]);
+        }
 
         return redirect()->route('appointment.success', ['booking_id' => $bookingId])
             ->with('success', 'Appointment booked successfully!');
@@ -81,7 +110,7 @@ class AppointmentController extends Controller
      */
     public function show(Appointment $appointment)
     {
-        //
+        return view('backend.appointment.show', compact('appointment'));
     }
 
     /**

@@ -6,12 +6,14 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Holiday;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
     public function index()
     {
-        $user = \Auth::user();
+        $user = Auth::user();
          // Available days of the week
          $days = [
             'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
@@ -35,133 +37,85 @@ class ProfileController extends Controller
         return view('backend.profile.index',compact('user','days','steps','breaks','employeeDays'));
     }
 
+    public function edit()
+    {
+        $user = Auth::user();
+        return view('backend.profile.edit', compact('user'));
+    }
 
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+        ]);
+
+        return redirect()->route('profile')->with('success', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|current_password',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return redirect()->route('profile')->with('success', 'Password updated successfully.');
+    }
 
     public function profileUpdate(Request $request, User $user)
     {
-        // Validate the incoming request data
-        $data = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
         ]);
 
-        // Check if email is being changed and if user is not admin
-        if ($request->email !== $user->email && !auth()->user()->hasRole('admin')) {
-            return redirect()->back()->withErrors(['email' => 'Only administrators can change email addresses.']);
-        }
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+        ]);
 
-        // Update the user with validated data
-        $user->update($data);
-
-        // Redirect back with a success message
-        return redirect()->back()->withSuccess('Profile has been successfully updated!');
+        return redirect()->back()->with('success', 'Profile updated successfully.');
     }
-
 
     public function employeeProfileUpdate(Request $request, Employee $employee)
     {
-
-        $data = $request->validate([
-            'slot_duration' => function ($attribute, $value, $fail) use ($request) {
-                // Check if 'is_employee' is true and 'slot_duration' is missing
-                if ($request->is_employee && !$value) {
-                    $fail('The ' . $attribute . ' field is required when the employee is true.');
-                }
-                // If it's present, it should be numeric
-                if ($value && !is_numeric($value)) {
-                    $fail('The ' . $attribute . ' field must be numeric.');
-                }
-            },
-            'break_duration' => 'nullable',
-            'days' => 'nullable',
-            'holidays.date.*' => 'sometimes|required',
-            'holidays.from_time' => 'nullable',
-            'holidays.to_time' => 'nullable',
-            'holidays.recurring' => 'nullable',
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $employee->user_id,
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
         ]);
 
+        $employee->user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+        ]);
 
-
-        if (!empty($data['days'])) {
-            $data['days'] = $this->transformOpeningHours($data['days']);
-        }
-
-        // dd($data);
-
-        // Update or create Employee record
-        // $employee = Employee::updateOrCreate(
-        //     ['user_id' => $employee->id], // Condition to check
-        //     [
-        //         'days' => $data['days'] ?? null,
-        //         'slot_duration' => $data['slot_duration'] ?? null,
-        //         'break_duration' => $data['break_duration'] ?? null
-        //     ]
-        // );
-
-        $employee->update(
-            [
-                'days' => $data['days'] ?? null,
-                'slot_duration' => $data['slot_duration'] ?? null,
-                'break_duration' => $data['break_duration'] ?? null
-            ]
-        );
-
-        if ($request->has('holidays.date') && is_array($request->input('holidays.date'))) {
-            // Get all existing holiday IDs for this employee
-            $existingHolidayIds = $employee->holidays->pluck('id')->toArray();
-            $submittedHolidayIds = [];
-
-            $dates = $request->input('holidays.date');
-            $fromTimes = $request->input('holidays.from_time');
-            $toTimes = $request->input('holidays.to_time');
-            $recurring = $request->input('holidays.recurring');
-            $holidayIds = $request->input('holidays.id', []); // Add hidden input for holiday IDs in your form
-
-            foreach ($dates as $index => $date) {
-                $holidayData = [
-                    'employee_id' => $employee->id,
-                    'hours' => isset($fromTimes[$index]) && isset($toTimes[$index])
-                        ? [$fromTimes[$index] . '-' . $toTimes[$index]]
-                        : [],
-                    'recurring' => isset($recurring[$index]) && $recurring[$index] == 1,
-                ];
-
-                // Handle date format based on recurring
-                if ($holidayData['recurring']) {
-                    $holidayData['date'] = \Carbon\Carbon::parse($date)->format('m-d');
-                } else {
-                    $holidayData['date'] = $date;
-                }
-
-                // Check if this is an existing holiday (has an ID)
-                if (isset($holidayIds[$index])) {
-                    $holiday = Holiday::find($holidayIds[$index]);
-                    if ($holiday) {
-                        $holiday->update($holidayData);
-                        $submittedHolidayIds[] = $holiday->id;
-                    }
-                } else {
-                    // Create new holiday
-                    $holiday = Holiday::create($holidayData);
-                    $submittedHolidayIds[] = $holiday->id;
-                }
-            }
-
-            // Delete any holidays that weren't submitted in the form
-            $holidaysToDelete = array_diff($existingHolidayIds, $submittedHolidayIds);
-            if (!empty($holidaysToDelete)) {
-                Holiday::whereIn('id', $holidaysToDelete)->delete();
-            }
-        } else {
-            // If no holidays were submitted but there were existing ones, delete them all
-            if ($employee->holidays()->exists()) {
-                $employee->holidays()->delete();
-            }
-        }
-
-        return redirect()->back()->with('success', 'Profile has been updated successfully!');
+        return redirect()->back()->with('success', 'Profile updated successfully.');
     }
-
 
     // Transform the data
     function transformOpeningHours($data)
@@ -195,7 +149,6 @@ class ProfileController extends Controller
 
         return $employeeDays;
     }
-
 }
 
 

@@ -70,7 +70,7 @@
                                             <td>{{ $booking->email }}</td>
                                             <td>{{ $booking->phone }}</td>
                                             <td>@if($booking->booking_time) {{ $booking->booking_time }} @else NA @endif</td>
-                                            <td>{{ \Carbon\Carbon::parse($booking->booking_date)->format('d, M Y') }}</td>
+                                            <td>{{ $booking->booking_date }}</td>
                                             <td>{{ $booking->employee_name }}</td>
 
 
