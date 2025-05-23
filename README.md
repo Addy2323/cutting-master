@@ -107,7 +107,7 @@ Password: admin123
 Need help with installation or want to customize features?
 
 📱 **WhatsApp**: [Chat on WhatsApp](https://wa.me/+255768828247)
-📧 **Email**: [mymambaado@gmail.com](mailto:myambaado@gmail.com)
+📧 **Email**: [myambaado@gmail.com](mailto:myambaado@gmail.com)
 
 > 💼 Paid support available for enterprise setups and integrations.
 
